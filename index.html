@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>DForm</title>
+    <link href="./bootstrap.min.css" rel="stylesheet">
+    <script src="./dformjs.js"></script>
+</head>
+<body>
+    <script type="text/javascript">
+        var form = dform.form();
+        var fieldset = dform.fieldset({
+            legend : 'Super sarasa'
+        });
+        var legend = dform.legend({
+            value : 'sarasa'
+        });
+        var input = dform.input({
+            label : {
+                value : 'A'
+            }
+        });
+        var select = dform.select({
+            options: [{
+                value: 0,
+                description: 'asd'
+            },
+            {
+                value: 5,
+                description: 'qwe'
+            }],
+            label : {
+                value : 'B'
+            }
+        });
+        var radios = dform.radio({
+            options: [{
+                value: 0,
+                description: 'asd'
+            },
+            {
+                value: 1,
+                description: 'qwe'
+            }],
+            label : {
+                value : 'C'
+            }
+        });
+        var number = dform.input({
+            type: 'checkbox',
+            required : undefined,
+            description : 'asd',
+            label : {
+                value : 'D'
+            }
+        });
+        var textarea = dform.textarea({
+            label : {
+                value : 'E'
+            }
+        });
+        var file = dform.input({
+            type: 'file',
+            label : {
+                value : 'F'
+            }
+        });
+        var submit = dform.input({
+            type : 'submit',
+            value : 'Save'
+        });
+        var button = dform.button({
+            type : 'reset',
+            value : 'Reset'
+        });
+        form.css({
+            form : 'col-sm-5 form-horizontal',
+            p: 'form-group',
+            div: 'col-sm-10',
+            select: 'form-control',
+            input: {
+                radio : '',
+                checkbox : '',
+                text : 'form-control',
+                number : 'form-control',
+                password : 'form-control',
+                email : 'form-control',
+                submit : 'btn',
+            },
+            button : {
+                submit : 'btn btn-success',
+                reset : 'btn btn-warning',
+            },
+            textarea: 'form-control',
+            label: 'control-label col-sm-2'
+        });
+        function Listener() {}
+        Listener.prototype.update = function(field) {
+            console.log(field.getValue());
+        };
+        input.addOnChangeListener(new Listener());
+        select.addOnChangeListener(new Listener());
+        radios.addOnChangeListener(new Listener());
+        number.addOnChangeListener(new Listener());
+        textarea.addOnChangeListener(new Listener());
+        file.addOnChangeListener(new Listener());
+        button.addOnChangeListener(new Listener());
+        submit.addOnChangeListener(new Listener());
+        form.addField(legend);
+        form.addField(input);
+        form.addField(select);
+        form.addField(radios);
+        form.addField(number);
+        form.addField(textarea);
+        form.addField(file);
+        form.addField(submit);
+        form.addField(button);
+        form.addField(fieldset);
+        fieldset.addField(input);
+        fieldset.addField(select);
+        fieldset.addField(radios);
+        fieldset.addField(number);
+        fieldset.addField(textarea);
+        fieldset.addField(submit);
+        fieldset.addField(button);
+        form.appendTo('body');
+    </script>
+</body>
+</html>
