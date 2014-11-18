@@ -109,6 +109,7 @@ window.dform = (function () {
         domLabelText = document.createTextNode(this.attributes.label ? this.attributes.label.value : '');
         domLabel.appendChild(domLabelText);
         p.appendChild(domLabel);
+        domDescription = document.createTextNode(this.attributes.description ? this.attributes.description : '');
         if (this.inputFirst) {
             var domSubFieldWrapper = document.createElement('div');
             if (css.div) {
@@ -119,7 +120,6 @@ window.dform = (function () {
             if (domFieldElement) {
                 domSubSubFieldWrapper.appendChild(domFieldElement);
             }
-            domDescription = document.createTextNode(this.attributes.description ? this.attributes.description : '');
             domSubSubFieldWrapper.appendChild(domDescription);
             if (domRequired) {
                 domSubSubFieldWrapper.appendChild(domRequired);
@@ -135,6 +135,7 @@ window.dform = (function () {
             if (domRequired) {
                 domFieldWrapper.appendChild(domRequired);
             }
+            domFieldWrapper.appendChild(domDescription);
             if (domErrorSpan) {
                 domFieldWrapper.appendChild(domErrorSpan);
             }
@@ -211,11 +212,7 @@ window.dform = (function () {
     __extends(DFormDOMElementBuilderLegend, DFormDOMElementBuilder);
     DFormDOMElementBuilderLegend.prototype.create = function(onChangeListener, css) {
         var domElement = DFormDOMElementBuilderLegend.__super__.create.apply(this, [onChangeListener, css]);
-        if(document.all){
-            domElement.innerText = domElement.getAttribute('value');
-        } else{
-            domElement.textContent = domElement.getAttribute('value');
-        }
+        domElement.appendChild(document.createTextNode(domElement.getAttribute('value')));
         return domElement;
     };
     // --------------------------------------------------------------------- //
@@ -238,11 +235,11 @@ window.dform = (function () {
         // --------------------------------------------------------------------- //
         function DFormDOMSelectOption(attrs, index) {
             DFormDOMSelectOption.__super__.constructor.apply(this, [attrs]);
-            var id = index ? index : Date.now();
+            var id = index !== undefined ? index : Date.now();
             this.text = id;
-            if (attrs.text !== undefined) {
-                this.text = attrs.text;
-                delete attrs.text;
+            if (attrs.description !== undefined) {
+                this.text = attrs.description;
+                delete attrs.description;
             }
             this.init('option', attrs, {
                 value : 'option_' + id
@@ -251,12 +248,12 @@ window.dform = (function () {
         __extends(DFormDOMSelectOption, DFormDOMElementBuilder);
         DFormDOMSelectOption.prototype.create = function(onChangeListener, css) {
             var domElement = DFormDOMSelectOption.__super__.create.apply(this, [onChangeListener, css]);
-            domElement.text = this.text;
+            domElement.appendChild(document.createTextNode(this.text));
             return domElement;
         };
         var domSelect = domElement.getElementsByTagName('select');
         for (var i = 0; i < this.options.length; i++) {
-            var opt = new DFormDOMSelectOption(this.options[i]);
+            var opt = new DFormDOMSelectOption(this.options[i], i);
             domSelect[0].appendChild(opt.create(undefined, css));
         };
         return domElement;
