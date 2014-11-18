@@ -11,13 +11,16 @@ window.dform = (function () {
         child.__super__ = parent.prototype;
         return child;
     };
+    var count = 0;
+    var UID = function() {
+        return count++;
+    }
     // --------------------------------------------------------------------- //
     // DFormDOMBuilder
     // --------------------------------------------------------------------- //
     function DFormDOMBuilder() {
         this.tag = undefined;
         this.attributes = {};
-        this.childs = [];
     }
     DFormDOMBuilder.prototype.create = function(listener, css) {
         console.error('must implement builder.create() method.');
@@ -25,41 +28,48 @@ window.dform = (function () {
     DFormDOMBuilder.prototype.addField = function(listener) {
         console.error('this builder does not support addField() method.');
     };
+    DFormDOMBuilder.prototype.getValue = function() {
+        console.error('this builder does not support getValue() method.');
+    };
+    DFormDOMBuilder.prototype.reset = function(value) {
+        console.error('this builder does not support reset() method.');
+    };
     // --------------------------------------------------------------------- //
     // DFormDOMElementBuilder
     // --------------------------------------------------------------------- //
     function DFormDOMElementBuilder() {
         this.tag = undefined;
         this.attributes = {};
-        this.childs = [];
+        this.domElement = undefined;
     }
     __extends(DFormDOMElementBuilder, DFormDOMBuilder);
     DFormDOMElementBuilder.prototype.create = function(listener, css) {
-        var domElement = undefined;
+        this.domElement = undefined;
         if (this.tag) {
-            domElement = document.createElement(this.tag);
+            this.domElement = document.createElement(this.tag);
             for (var attr in this.attributes) {
                 if (!this.attributes[attr] || typeof this.attributes[attr] === 'string' || typeof this.attributes[attr] === 'number') {
                     var value = this.attributes[attr] !== undefined ? this.attributes[attr] : '';
-                    domElement.setAttribute(attr, value);
+                    this.domElement.setAttribute(attr, value);
                 }
             }
         }
-        if (listener && domElement) {
-            domElement.addEventListener("input", listener);
-            domElement.addEventListener("keyup", listener);
+        if (listener && this.domElement) {
+            this.domElement.addEventListener("input", listener);
+            this.domElement.addEventListener("click", listener);
+            this.domElement.addEventListener("keyup", listener);
         }
-        if (css && css[this.tag] && domElement) {
-            var cssValue = domElement.getAttribute('class') ? domElement.getAttribute('class') : '';
+        if (css && css[this.tag] && this.domElement) {
+            var cssValue = this.domElement.getAttribute('class') ? this.domElement.getAttribute('class') : '';
             var defaultCss = '';
             if (typeof css[this.tag] === 'string') {
                 defaultCss = css[this.tag];
             } else {
                 defaultCss = css[this.tag][this.attributes.type];
             }
-            domElement.setAttribute('class', defaultCss + ' ' + cssValue)
+            this.domElement.setAttribute('class', defaultCss + ' ' + cssValue)
         }
-        return domElement;
+        return this.domElement;
     };
     DFormDOMElementBuilder.prototype.init = function(tag, attrs, defaultAttributes) {
         this.tag = tag;
@@ -70,6 +80,17 @@ window.dform = (function () {
             this.attributes[attr] = attrs[attr];
         };
     }
+    DFormDOMElementBuilder.prototype.getValue = function() {
+        var value = undefined;
+        if (this.domElement) {
+            var element = document.getElementById(this.domElement.id)
+            value = element.getAttribute('type') === 'checkbox' ? element.checked : element.value;
+        }
+        return value;
+    };
+    DFormDOMElementBuilder.prototype.reset = function(value) {
+        document.getElementById(this.domElement.id).value = value;
+    };
     // --------------------------------------------------------------------- //
     // DFormDOMFieldBuilder
     // --------------------------------------------------------------------- //
@@ -148,7 +169,7 @@ window.dform = (function () {
     // --------------------------------------------------------------------- //
     function DFormDOMElementBuilderInput(attrs) {
         DFormDOMElementBuilderInput.__super__.constructor.apply(this, [attrs]);
-        var id = Date.now();
+        var id = UID();
         this.init('input', attrs, {
             id : 'id_input_' + id,
             name : 'name_input_' + id,
@@ -161,7 +182,7 @@ window.dform = (function () {
     // --------------------------------------------------------------------- //
     function DFormDOMElementBuilderButton(attrs) {
         DFormDOMElementBuilderButton.__super__.constructor.apply(this, [attrs]);
-        var id = Date.now();
+        var id = UID();
         this.init('button', attrs, {
             id : 'id_button_' + id,
             name : 'name_button_' + id,
@@ -183,7 +204,7 @@ window.dform = (function () {
     // --------------------------------------------------------------------- //
     function DFormDOMElementBuilderTextarea(attrs) {
         DFormDOMElementBuilderTextarea.__super__.constructor.apply(this, [attrs]);
-        var id = Date.now();
+        var id = UID();
         this.init('textarea', attrs, {
             id : 'id_textarea_' + id,
             name : 'name_textarea_' + id,
@@ -206,7 +227,7 @@ window.dform = (function () {
     // --------------------------------------------------------------------- //
     function DFormDOMElementBuilderLegend(attrs) {
         DFormDOMElementBuilderLegend.__super__.constructor.apply(this, [attrs]);
-        var id = Date.now();
+        var id = UID();
         this.init('legend', attrs, {});
     }
     __extends(DFormDOMElementBuilderLegend, DFormDOMElementBuilder);
@@ -220,7 +241,7 @@ window.dform = (function () {
     // --------------------------------------------------------------------- //
     function DFormDOMElementBuilderSelect(attrs, options) {
         DFormDOMElementBuilderSelect.__super__.constructor.apply(this, [attrs]);
-        var id = Date.now();
+        var id = UID();
         this.options = options ? options : attrs.options;
         this.init('select', attrs, {
             id : 'id_select_' + id,
@@ -235,7 +256,7 @@ window.dform = (function () {
         // --------------------------------------------------------------------- //
         function DFormDOMSelectOption(attrs, index) {
             DFormDOMSelectOption.__super__.constructor.apply(this, [attrs]);
-            var id = index !== undefined ? index : Date.now();
+            var id = index !== undefined ? index : UID();
             this.text = id;
             if (attrs.description !== undefined) {
                 this.text = attrs.description;
@@ -263,35 +284,51 @@ window.dform = (function () {
     // --------------------------------------------------------------------- //
     function DFormDOMElementBuilderRadio(attrs, options) {
         DFormDOMElementBuilderRadio.__super__.constructor.apply(this, [attrs]);
-        var id = Date.now();
+        var id = UID();
         this.options = options ? options : attrs.options;
         this.attributes = attrs ? attrs : {};
         this.attributes.name = this.attributes.name ? this.attributes.name : 'radio_' + id;
         this.attributes.id = this.attributes.id ? this.attributes.id : 'id_radio_' + id;
         this.init(undefined, attrs, {});
+        this.radios = [];
     }
     __extends(DFormDOMElementBuilderRadio, DFormDOMFieldBuilder);
     DFormDOMElementBuilderRadio.prototype.create = function(onChangeListener, css) {
         var domElement = DFormDOMElementBuilderRadio.__super__.create.apply(this, [onChangeListener, css]);
         var domRadios = domElement.getElementsByTagName('div')[0];
-        for (var i = this.options.length - 1; i >= 0; i--) {
+        for (var i = 0; i < this.options.length; i++) {
             var attrs = this.options[i];
             attrs.type = 'radio';
             attrs.name = this.attributes.name;
             attrs.id = this.attributes.id + '_' + i;
             var radio = new DFormDOMElementBuilderInput(attrs);
+            this.radios.push(radio);
             var domRadio = radio.create(onChangeListener, css);
             var domInputRadio = domRadio.getElementsByTagName('div')[0];
             domRadios.appendChild(domInputRadio);
         };
         return domElement;
     };
+    DFormDOMElementBuilderRadio.prototype.getValue = function() {
+        for (var i = 0; i < this.radios.length; i++) {
+            if (document.getElementById(this.attributes.id + '_' + i).checked) {
+                return document.getElementById(this.attributes.id + '_' + i).value;
+            }
+        };
+    }
+    DFormDOMElementBuilderRadio.prototype.reset = function(value) {
+        for (var i = 0; i < this.radios.length; i++) {
+            if (document.getElementById(this.attributes.id + '_' + i).value === value) {
+                return document.getElementById(this.attributes.id + '_' + i).checked = true;
+            }
+        };
+    }
     // --------------------------------------------------------------------- //
     // DFormDOMElementBuilderFieldset
     // --------------------------------------------------------------------- //
     function DFormDOMElementBuilderFieldset(attrs, fields) {
         DFormDOMElementBuilderFieldset.__super__.constructor.apply(this, [attrs]);
-        var id = Date.now();
+        var id = UID();
         this.fields = fields ? fields : [];
         this.init('fieldset', attrs, {});
         if (attrs.legend) {
@@ -320,7 +357,7 @@ window.dform = (function () {
     function DFormDOMFormBuilder(attrs) {
         DFormDOMFormBuilder.__super__.constructor.apply(this, [attrs]);
         this.fields = [];
-        var id = Date.now();
+        var id = UID();
         this.init('form', attrs, {
             id : 'form_' + id,
             name : 'form_' + id
@@ -348,7 +385,7 @@ window.dform = (function () {
         this._DOM = undefined;
     }
     DFormField.prototype.getValue = function() {
-        return this._DOM ? this._DOM.value : undefined;
+        return this._DOMBuilder ? this._DOMBuilder.getValue() : undefined;
     }
     DFormField.prototype.addOnChangeListener = function(listener) {
         this._listeners.push(listener);
@@ -363,8 +400,10 @@ window.dform = (function () {
         var me = this;
         return this._DOM;
     }
-    DFormField.prototype.reset = function() {
-        this._DOM.value = undefined;
+    DFormField.prototype.reset = function(value) {
+        if (this._DOMBuilder) {
+            this._DOMBuilder.reset(value);
+        }
     }
     DFormField.prototype.clone = function() {
         clone = new DFormField(this.dFormDOMElementBuilder);
